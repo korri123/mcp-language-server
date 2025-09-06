@@ -27,7 +27,6 @@ func openAllTypeScriptFiles(ctx context.Context, client *Client, workspaceDir st
 
 	// Track count of opened files for logging
 	fileCount := 0
-	var tsFileNames []string
 	// Walk the workspace directory
 	err := filepath.Walk(workspaceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -51,7 +50,6 @@ func openAllTypeScriptFiles(ctx context.Context, client *Client, workspaceDir st
 				return nil // Continue with other files even if one fails
 			}
 			fileCount++
-			tsFileNames = append(tsFileNames, filepath.Base(path))
 		}
 
 		return nil
@@ -61,6 +59,6 @@ func openAllTypeScriptFiles(ctx context.Context, client *Client, workspaceDir st
 		return fmt.Errorf("error walking workspace directory: %w", err)
 	}
 
-	lspLogger.Info("Opened %d TypeScript files: %s", fileCount, strings.Join(tsFileNames, ", "))
+	lspLogger.Info("Opened %d TypeScript files", fileCount)
 	return nil
 }
