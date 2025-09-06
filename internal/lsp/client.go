@@ -210,10 +210,8 @@ func (c *Client) InitializeLSPClient(ctx context.Context, workspaceDir string) (
 
 	// LSP sepecific Initialization
 	path := strings.ToLower(c.Cmd.Path)
-	switch {
-	case strings.Contains(path, "typescript-language-server"):
-		err := initializeTypescriptLanguageServer(ctx, c, workspaceDir)
-		if err != nil {
+	if strings.Contains(path, "typescript-language-server") || strings.Contains(path, "vtsls") {
+		if err := initializeTypescriptLanguageServer(ctx, c, workspaceDir); err != nil {
 			return nil, err
 		}
 	}
