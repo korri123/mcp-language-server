@@ -30,7 +30,7 @@ func ReadDefinition(ctx context.Context, client *lsp.Client, symbolName string) 
 				container = fmt.Sprintf("Container Name: %s\n", vContainerName)
 			}
 
-			if thisName == symbolName+"()" || thisName == symbolName {
+			if thisName == symbolName {
 				return true
 			}
 

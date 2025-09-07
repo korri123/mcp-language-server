@@ -197,5 +197,23 @@ func QuerySymbol(ctx context.Context, client *lsp.Client, symbolName string) (st
 		}
 	}
 
+	// Strip "()" from function names that end with "()" and are of type Function
+	for _, result := range results {
+		name := result.GetName()
+		if strings.HasSuffix(name, "()") {
+			// Check if this is a function symbol
+			switch symbol := result.(type) {
+			case *protocol.WorkspaceSymbol:
+				if symbol.Kind == 12 { // Function
+					symbol.Name = strings.TrimSuffix(name, "()")
+				}
+			case *protocol.SymbolInformation:
+				if symbol.Kind == 12 { // Function
+					symbol.Name = strings.TrimSuffix(name, "()")
+				}
+			}
+		}
+	}
+
 	return symbolName, results, err
 }
