@@ -47,8 +47,10 @@ func GetHoverInfo(ctx context.Context, client *lsp.Client, filePath string, line
 
 	var result strings.Builder
 
-	// Process the hover contents based on Markup content
-	if hoverResult.Contents.Value == "" {
+	// Extract string content from hover using the ToString method
+	contentText := hoverResult.ToString()
+
+	if contentText == "" {
 		// Extract the line where the hover was requested
 		lineText, err := ExtractTextFromLocation(protocol.Location{
 			URI: uri,
@@ -68,7 +70,7 @@ func GetHoverInfo(ctx context.Context, client *lsp.Client, filePath string, line
 		}
 		result.WriteString(fmt.Sprintf("No hover information available for this position on the following line:\n%s", lineText))
 	} else {
-		result.WriteString(hoverResult.Contents.Value)
+		result.WriteString(contentText)
 	}
 
 	return result.String(), nil

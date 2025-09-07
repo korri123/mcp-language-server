@@ -1,6 +1,9 @@
 package protocol
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // TextEditResult is an interface for types that represent workspace symbols
 type WorkspaceSymbolResult interface {
@@ -113,5 +116,44 @@ func (e Or_TextDocumentEdit_edits_Elem) AsTextEdit() (TextEdit, error) {
 		}, nil
 	default:
 		return TextEdit{}, fmt.Errorf("unknown text edit type: %T", e.Value)
+	}
+}
+
+// ToString extracts the string content from Hover.Contents which can be MarkedString, MarkupContent, or []MarkedString
+func (h *Hover) ToString() string {
+	if h.Contents.Value == nil {
+		return ""
+	}
+
+	switch content := h.Contents.Value.(type) {
+	case MarkupContent:
+		return content.Value
+	case string:
+		return content
+	case MarkedStringWithLanguage:
+		return content.Value
+	case MarkedString:
+		// MarkedString is an alias for Or_MarkedString
+		switch v := content.Value.(type) {
+		case string:
+			return v
+		case MarkedStringWithLanguage:
+			return v.Value
+		default:
+			return ""
+		}
+	case []MarkedString:
+		var parts []string
+		for _, ms := range content {
+			switch v := ms.Value.(type) {
+			case string:
+				parts = append(parts, v)
+			case MarkedStringWithLanguage:
+				parts = append(parts, v.Value)
+			}
+		}
+		return strings.Join(parts, "\n")
+	default:
+		return ""
 	}
 }
