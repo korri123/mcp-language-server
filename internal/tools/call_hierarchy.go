@@ -56,15 +56,19 @@ func getCallHierarchy(
 
 		result.WriteString("\n---\n")
 
-		// Get the location of the symbol
-		loc := symbol.GetLocation()
+		// Get the exact location of the symbol name
+		exactLoc, err := GetExactSymbolLocation(symbol)
+		if err != nil {
+			result.WriteString(fmt.Sprintf("%s: Error getting exact location: %v\n", symbol.GetName(), err))
+			continue
+		}
 
 		chParams := protocol.CallHierarchyPrepareParams{
 			TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 				TextDocument: protocol.TextDocumentIdentifier{
-					URI: loc.URI,
+					URI: exactLoc.URI,
 				},
-				Position: loc.Range.Start,
+				Position: exactLoc.Range.Start,
 			},
 		}
 		items, err := client.PrepareCallHierarchy(ctx, chParams)

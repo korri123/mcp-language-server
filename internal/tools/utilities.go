@@ -217,3 +217,71 @@ func QuerySymbol(ctx context.Context, client *lsp.Client, symbolName string) (st
 
 	return symbolName, results, err
 }
+
+// GetExactSymbolLocation takes a WorkspaceSymbolResult and finds the exact location
+// where the symbol name appears in the definition, rather than the start of the line
+func GetExactSymbolLocation(symbol protocol.WorkspaceSymbolResult) (protocol.Location, error) {
+	loc := symbol.GetLocation()
+	symbolName := symbol.GetName()
+
+	if symbolName == "" {
+		return loc, fmt.Errorf("symbol has empty name")
+	}
+
+	// Read the file content
+	path := strings.TrimPrefix(string(loc.URI), "file://")
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return loc, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	lines := strings.Split(string(content), "\n")
+	startLine := int(loc.Range.Start.Line)
+
+	if startLine < 0 || startLine >= len(lines) {
+		return loc, fmt.Errorf("invalid line number: %d", startLine)
+	}
+
+	line := lines[startLine]
+
+	// Find the symbol name in the line
+	// Look for the symbol name starting from the current character position
+	startChar := int(loc.Range.Start.Character)
+	if startChar < 0 || startChar > len(line) {
+		startChar = 0
+	}
+
+	// Search for the symbol name in the line starting from the current position
+	searchLine := line[startChar:]
+	nameIndex := strings.Index(searchLine, symbolName)
+
+	if nameIndex == -1 {
+		// If not found from the start position, search the entire line
+		nameIndex = strings.Index(line, symbolName)
+		if nameIndex == -1 {
+			// If still not found, return the original location
+			return loc, nil
+		}
+		startChar = 0
+	}
+
+	// Calculate the exact position of the symbol name
+	exactChar := uint32(startChar + nameIndex)
+
+	// Create new location with exact position
+	exactLoc := protocol.Location{
+		URI: loc.URI,
+		Range: protocol.Range{
+			Start: protocol.Position{
+				Line:      loc.Range.Start.Line,
+				Character: exactChar,
+			},
+			End: protocol.Position{
+				Line:      loc.Range.Start.Line,
+				Character: exactChar + uint32(len(symbolName)),
+			},
+		},
+	}
+
+	return exactLoc, nil
+}
