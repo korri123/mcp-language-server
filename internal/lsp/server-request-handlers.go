@@ -21,7 +21,37 @@ func RegisterFileWatchHandler(handler FileWatchHandler) {
 // Requests
 
 func HandleWorkspaceConfiguration(params json.RawMessage) (any, error) {
-	return []map[string]any{{}}, nil
+	var configParams protocol.ParamConfiguration
+	if err := json.Unmarshal(params, &configParams); err != nil {
+		lspLogger.Error("Error unmarshaling configuration params: %v", err)
+		return []map[string]any{{}}, nil
+	}
+
+	result := make([]map[string]any, 0, len(configParams.Items))
+
+	for _, item := range configParams.Items {
+		config := make(map[string]any)
+		
+		// Handle TypeScript-specific configurations
+		if item.Section == "" {
+			// Return full configuration including TypeScript settings
+			config["typescript"] = map[string]any{
+				"preferences": map[string]any{
+					"noErrorTruncation": false,
+				},
+			}
+		} else if item.Section == "typescript" {
+			config["preferences"] = map[string]any{
+				"noErrorTruncation": false,
+			}
+		} else if item.Section == "typescript.preferences" {
+			config["noErrorTruncation"] = false
+		}
+
+		result = append(result, config)
+	}
+
+	return result, nil
 }
 
 func HandleRegisterCapability(params json.RawMessage) (any, error) {
